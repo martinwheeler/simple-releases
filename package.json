@@ -1,0 +1,26 @@
+{
+  "name": "simple-releases",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A CLI tool to simplify running a release into multiple environments.",
+  "type": "module",
+  "main": "bin/main.js",
+  "bin": "bin/main.js",
+  "scripts": {
+    "start": "ts-node --esm src/main.ts",
+    "build": "tsc",
+    "prepare": "husky install"
+  },
+  "author": "Martin Wheeler",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.9.0",
+    "husky": "^8.0.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.2"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^3.3.0",
+    "chalk": "^5.3.0"
+  }
+}
