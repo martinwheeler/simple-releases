@@ -11,8 +11,8 @@ const asyncExec = util.promisify(exec);
 
 // Notify the user why this has appeared.
 
-const SOURCE_BRANCH = "dev";
-const TARGET_BRANCH = "staging";
+let SOURCE_BRANCH = "dev";
+let TARGET_BRANCH: "dev" | "staging" | "main" = "staging";
 
 console.log(
   `You're merging ${chalk.blue.bold(SOURCE_BRANCH)} into ${chalk.yellow.bold(
@@ -20,9 +20,36 @@ console.log(
   )}. \n`
 );
 
+const getDefaultVersion = async () => {
+  // TODO: Get the default tag value from a git --tags (get the latest one)
+  // Bump the value based on the source branch E.g. if dev -> staging bump the minor
+  // anything -> dev bump the patch
+  // staging -> prod bump the major
+
+  const { stdout: latestTag, stderr: getLatestTagError } = await asyncExec(
+    `git describe --tags --abbrev=0`
+  );
+
+  const [major, minor, patch] = latestTag.split(".");
+
+  if (TARGET_BRANCH === "dev") {
+    return `${major}.${minor}.${Number(patch) + 1}`;
+  }
+
+  if (TARGET_BRANCH === "staging") {
+    return `${major}.${Number(minor) + 1}.${patch}`;
+  }
+
+  if (TARGET_BRANCH === "main") {
+    return `${Number(major) + 1}.${minor}.${patch}`;
+  }
+
+  return "1.0.0";
+};
+
 const version = await input({
   message: "What version would you like to assign to this release?",
-  default: "1.0.0",
+  default: (await getDefaultVersion()).trim(),
 });
 
 const issueTag = await input({
@@ -31,8 +58,9 @@ const issueTag = await input({
   default: "SR",
 });
 
+// TODO: Only look between a range of commits (ATM it does everything)
 const { stdout: changelogCommits, stderr: commitCheckError } = await asyncExec(
-  `git log --oneline | grep -Eo "${issueTag}-[0-9]+"`
+  `git log --oneline | grep -E "${issueTag}-[0-9]+"`
 );
 
 if (
@@ -42,14 +70,34 @@ if (
 ) {
   const timestamp = new Date().toString();
 
+  const arrayOfCommits = changelogCommits.split("\n");
+
+  const featRegex = new RegExp(/feat(\(\S+\))?!?:/);
+  const fixRegex = new RegExp(/fix(\(\S+\))?!?:/);
+
+  const featCommits = arrayOfCommits.filter((c) => featRegex.test(c));
+  const fixCommits = arrayOfCommits.filter((c) => fixRegex.test(c));
+
   // NOTE: No indents for the message otherwise it is reflected in the CHANGELOG.md file too
   const newChanelogEntry = `## v${version} - ${timestamp}
 
 ### Added
-    - Merged feature/branches
+    ${featCommits.reduce((result, commit) => {
+      if (result) {
+        return `${result}\n- ${commit}`;
+      }
+
+      return `- ${commit}`;
+    }, "")}
+
 ### Fixed
-    - Merged bugfix/branches
-    - Merged hotfix/branches
+    ${fixCommits.reduce((result, commit) => {
+      if (result) {
+        return `${result}\n- ${commit}`;
+      }
+
+      return `- ${commit}`;
+    }, "")}
 `;
 
   const { stdout: appendingChangelog, stderr: changelogError } =
@@ -62,7 +110,7 @@ console.log({
   changelogCommits,
 });
 
-await asyncExec(`git add -A`);
+await asyncExec(`git add CHANGELOG.md`);
 await asyncExec(`git commit -m 'build: release v${version}'`);
 
 const { stdout: tag, stderr: tagError } = await asyncExec(
