@@ -60,7 +60,7 @@ const issueTag = await input({
 
 // TODO: Only look between a range of commits (ATM it does everything)
 const { stdout: changelogCommits, stderr: commitCheckError } = await asyncExec(
-  `git log --oneline | grep -E "${issueTag}-[0-9]+"`
+  `git log --oneline | grep -E "\S{7}\sMerge.*${issueTag}-[0-9]+"`
 );
 
 if (
@@ -72,8 +72,9 @@ if (
 
   const arrayOfCommits = changelogCommits.split("\n");
 
-  const featRegex = new RegExp(/feat(\(\S+\))?!?:/);
-  const fixRegex = new RegExp(/fix(\(\S+\))?!?:/);
+  // TODO: Need to define how we want the commits to be shaped, as feat may not always appear on the same line
+  const featRegex = new RegExp(/feature\//);
+  const fixRegex = new RegExp(/(bug|hot)fix\//);
 
   const featCommits = arrayOfCommits.filter((c) => featRegex.test(c));
   const fixCommits = arrayOfCommits.filter((c) => fixRegex.test(c));
