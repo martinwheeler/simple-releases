@@ -1,18 +1,14 @@
 {
+  "extends": "@tsconfig/node16/tsconfig.json",
   "compilerOptions": {
-    "module": "es2022",
-    "target": "es2022",
-    "lib": ["es2022"],
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "outDir": "bin",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["node_modules/*", "src/types/*"]
-    },
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "esModuleInterop": true
-  },
-  "include": ["src/**/*"]
+    "rootDir": "src",
+    "outDir": "lib",
+    "declaration": true,
+    "moduleResolution": "Node16",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "removeComments": true
+  }
 }
